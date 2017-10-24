@@ -2,13 +2,13 @@
 
 /*
  * APP
- */ 
+ */
 (function(){
-   
+
    angular.module('app', ['ngSanitize']).run(function(){
-      
+
    });
-   
+
 })();
 
 /*
@@ -16,18 +16,22 @@
  */
 (function(){
    'use strict';
-   
+
    angular
       .module('app')
       .factory('dataService', dataService);
-      
+
    dataService.$inject = ['$http'];
-      
+
    function dataService($http){
-      
+
       var cache = {};
-      
+      var currentConfiguration = undefined;
+
       return {
+         setActiveConfig: setActiveConfig,
+         getActiveConfig: getActiveConfig,
+         getConfigurations: getConfigurations,
          getOperations: getOperations,
          postOperations: postOperations,
          deleteOperations: deleteOperations,
@@ -37,68 +41,110 @@
          getPreset: getPreset,
          getPresetNames: getPresetNames
       };
-      
+
+      function getBaseUrl(){
+         if(!currentConfiguration){
+            throw 'currentConfiguration not set!'
+         }
+
+         return 'api/' + currentConfiguration;
+      }
+
+      function setActiveConfig(configName){
+         currentConfiguration = configName;
+      }
+
+      function getActiveConfig(){
+         return currentConfiguration;
+      }
+
+      function getCurrentCache(){
+         cache[currentConfiguration] = cache[currentConfiguration] || {};
+         return cache[currentConfiguration];
+      }
+
+      function getConfigurations(){
+         return $http.get('/api/configurations').then(function(res){
+            return res.data;
+         });
+      }
+
       function getOperations(sort, from, to){
-         
+
+         var baseUrl = getBaseUrl();
+
          var params = {};
          if (from){ params.from = from; }
          if (to) { params.to = to };
          if (sort) { params.sort = sort };
-         
+
          return $http.get(
-            '/api/operations',{
+            baseUrl + '/operations',{
                params: params
             }
          ).then(function(res){
             return res.data;
          });
       }
-      
+
       function getPresetNames(){
-         return $http.get('/api/operations/presets')
+         var baseUrl = getBaseUrl();
+
+         return $http.get(baseUrl + '/operations/presets')
          .then(function (res){ return res.data; });
       }
-      
+
       function getPreset(name){
-         return $http.get('/api/operations/presets/' + name)
+         var baseUrl = getBaseUrl();
+
+         return $http.get(baseUrl + '/operations/presets/' + name)
          .then(function (res){ return res.data; });
       }
-      
+
       function postOperations(operations){
+         var baseUrl = getBaseUrl();
          return $http.post(
-            '/api/operations',
+            baseUrl + '/operations',
             operations,{
                headers: { 'Content-Type' : 'application/json' }
             }
          ).then(
-            function(){ return true; }, 
+            function(){ return true; },
             function(){ return false; }
          );
       }
-      
+
       function deleteOperations(id){
-         return $http.delete('/api/operations/' + id)
+         var baseUrl = getBaseUrl();
+
+         return $http.delete(baseUrl + '/operations/' + id)
             .then(
-               function(){ return true; }, 
+               function(){ return true; },
                function(){ return false; }
             );
       }
-      
+
       function getSummary(date){
-         return $http.get('/api/summary/' + date)
+         var baseUrl = getBaseUrl();
+
+         return $http.get(baseUrl + '/summary/' + date)
             .then(function(res) { return res.data });
       }
-      
+
       function getBalance(date){
-         return $http.get('/api/summary/' + date + '/balance')
+         var baseUrl = getBaseUrl();
+
+         return $http.get(baseUrl + '/summary/' + date + '/balance')
             .then(function(res) { return res.data });
       }
-      
+
       function getCategories(){
+         var baseUrl = getBaseUrl();
+         var cache = getCurrentCache();
          cache.categories = cache.categories || $http.get(
-            '/api/categories'
+            baseUrl + '/categories'
          );
-         
+
          return cache.categories.then(function(res){ return res.data; });
       }
    }
@@ -107,15 +153,15 @@
 /*
  * APP CONTROLLERS
  */
-(function(){   
-   
+(function(){
+
    angular.module('app')
       .controller('appController', AppController);
-   
+
    function AppController(){
       var ctrl = this;
-      
-      
+
+
    }
 })();
 
@@ -140,22 +186,59 @@
 })();
 
 /*
+ * COMPONENT : Configuration selector
+*/
+(function(){
+   angular.module('app')
+      .component('configMenu', {
+         template: '<div data-ng-if="$ctrl.configurations">'
+         + '<ul class="configMenu">'
+         + '<li data-ng-repeat="conf in $ctrl.configurations">'
+         + '<button data-ng-click="$ctrl.setActiveConfig(conf)">{{conf}}</button>'
+         + '</li>'
+         + '</ul>'
+         + '</div>',
+         controller: ConfigMenuController
+      });
+
+   ConfigMenuController.$inject = [ '$rootScope', 'dataService' ];
+   function ConfigMenuController($rootScope, dataService){
+      var ctrl = this;
+      ctrl.configurations = false;
+      ctrl.setActiveConfig = setActiveConfig;
+
+      dataService.getConfigurations().then(function(configurations){
+         ctrl.configurations = configurations;
+      });
+
+      function setActiveConfig(config){
+         dataService.setActiveConfig(config);
+         $rootScope.activePage = '';
+         $rootScope.ready = true;
+      }
+   }
+})();
+
+/*
  * COMPONENT : AppMenu
  */
 (function(){
    angular.module('app')
       .component('appMenu', {
-         template: '<ul class="appMenu"><li data-ng-repeat="page in $ctrl.pages">'
-            + '<button data-ng-click="$ctrl.goto(page.id)">{{page.name}}</button>'
-            + '</li>',
+         template:
+              '<ul data-ng-if="$root.ready" class="appMenu">'
+            +   '<li data-ng-repeat="page in $ctrl.pages">'
+            +     '<button data-ng-click="$ctrl.goto(page.id)">{{page.name}}</button>'
+            +   '</li>'
+            + '</ul>',
          controller: AppMenuController
       });
-      
+
    AppMenuController.$inject = [ '$rootScope' ];
    function AppMenuController($rootScope){
       var ctrl = this;
       ctrl.goto = goto;
-      
+
       ctrl.pages = [{
          id: 'summary',
          name: 'Sommaire'
@@ -166,9 +249,9 @@
          id: 'addOperations',
          name: 'Ajouter des operations'
       }];
-      
-      goto(ctrl.pages[0].id);
-      
+
+      //goto(ctrl.pages[0].id);
+
       function goto(pageId){
          $rootScope.activePage = pageId;
          console.log('$rootScope.activePage', $rootScope.activePage);
@@ -202,7 +285,7 @@
          + '</table>',
          controller: BudgetSummaryController
       });
-      
+
    BudgetSummaryController.$inject = [ 'dataService' ];
    function BudgetSummaryController(dataService){
       var ctrl = this;
@@ -214,17 +297,17 @@
       }
       ctrl.summaryDate = summaryDate;
       console.log('budget summary for', summaryDate);
-      
+
       dataService.getSummary(summaryDate).then(function (summary){
          dataService.getCategories().then(function (categories){
             ctrl.entries = buildSummaryModel(summary, categories);
          });
       });
-      
+
       dataService.getBalance(summaryDate).then(function(balance){
          ctrl.balance = balance;
       });
-      
+
       function buildSummaryModel(summary, categories){
          //var keyedCat = arrayToObject(categories, 'id', 'name');
          var keyedSum = arrayToObject(summary, 'category');
@@ -247,7 +330,7 @@
          //   entry.category = keyedCat[entry.category];
          //   model.push(entry);
          //}
-         
+
          return model;
       }
    }
@@ -300,24 +383,24 @@
       +'</table>',
       controller: OperationsListController
    });
-   
+
    OperationsListController.$inject = [ 'dataService' ];
    function OperationsListController(dataService){
       var ctrl = this;
-      
+
       ctrl.sortOptions = [
          { descr: '&uarr;', value: { sort: ['date', 'id'], key: 'asc' } },
          { descr: '&darr;', value: { sort: ['-date', 'id'], key: 'desc' }}
       ];
       ctrl.activeSort = ctrl.sortOptions[0].value;
-      
+
       ctrl.listOperations = listOperations;
       ctrl.deleteOp = deleteOp;
-      
+
       var today = new Date();
-      
+
       listOperations();
-      
+
       function listOperations(){
          dataService.getOperations(ctrl.activeSort.sort).then(function(operations){
             dataService.getCategories().then(function(categories){
@@ -326,7 +409,7 @@
             });
          });
       }
-      
+
       function deleteOp(operation){
          var msg = "Supprimer l'opération "
          + operation.category + " en date du " + operation.date + "au montant de " + operation.amount + "$";
@@ -334,7 +417,7 @@
             msg += ' "' + operation.description + '"';
          }
          msg += ' ?';
-         
+
          if (confirm(msg)){
             console.log('deleting', operation);
             dataService.deleteOperations(operation.id)
@@ -347,13 +430,13 @@
                });
          }
       }
-      
+
       function buildModel(operations, categories){
          var keyedCat = arrayToObject(categories, 'id', 'name');
          var model = [];
-         
+
          var asc = ctrl.activeSort.key === 'asc';
-         
+
          var currentBalance = initialBalance(asc, operations);
          var lastGroup;
          for(var i = 0 ; i < operations.length ; i++){
@@ -367,7 +450,7 @@
                   continue;
                }
             }
-            
+
             var future = Date.fromFormat(op.date) > today;
             currentBalance += balanceAdjustement(asc, op, lastGroup);
             var group = {
@@ -378,15 +461,15 @@
                date: op.date,
                operations: [ op ]
             };
-            
+
             model.push(group);
          }
-         
+
          if (model.length > 0){
             var lastOpIndex = asc ? model.length - 1 : 0;
             var increment = asc ? -1 : 1;
             var checkLimit = asc ? (i) => { return i >= 0 } : (i) => { return i < model.length };
-            
+
             for (var i = lastOpIndex ; checkLimit(i) ; i+= increment){
                if (!model[i].future){
                   model[i].actual = true;
@@ -394,13 +477,13 @@
                }
             }
          }
-         
+
          return model;
       };
-      
+
       function initialBalance(asc, operations){
          if (asc){ return 0; }
-         
+
          //sort === 'desc'
          var balance = 0;
          for (var i = 0 ; i < operations.length ; i++){
@@ -408,14 +491,14 @@
          }
          return balance;
       }
-      
+
       function balanceAdjustement(asc, operation, lastGroup){
          if (asc){
             return operation.groupAmount;
          } else if (lastGroup){
             return lastGroup.amount * -1;
          }
-         
+
          return 0;
       }
    }
@@ -427,7 +510,7 @@
 (function(){
    angular.module('app')
       .component('addOperations', {
-         template: 
+         template:
            '<messages-list data-information-messages="$ctrl.infoMessages" data-error-messages="$ctrl.errorMessages"></messages-list>'
          + '<label for="date">Date&nbsp;</label><input type="date" data-ng-model="$ctrl.opDate" />'
          + '<br />'
@@ -462,11 +545,11 @@
          + '<button data-ng-click="$ctrl.process();">Go</button>',
          controller: AddOperationsController
       });
-      
+
    AddOperationsController.$inject = [ 'dataService' ];
    function AddOperationsController(dataService){
       var ctrl = this;
-      
+
       //Models
       ctrl.opDate = new Date();
       ctrl.group = '';
@@ -476,23 +559,23 @@
       ctrl.operations = [];
       ctrl.presets = [];
       ctrl.numRow = 1;
-      
+
       //Functions
       ctrl.process = process;
       ctrl.addRow = addRow;
       ctrl.removeRow = removeRow;
       ctrl.getTotal = getTotal;
       ctrl.loadPreset = loadPreset;
-      
+
       dataService.getCategories().then(function(categories){
          ctrl.categories = categories;
          ctrl.operations.push(emptyModel());
       });
-      
+
       dataService.getPresetNames().then(function(presets){
          ctrl.presets = presets;
       });
-      
+
       function emptyModel(){
          return {
             category: undefined,
@@ -500,22 +583,22 @@
             amount: 0.00
          };
       }
-      
+
       function addRow(){
          for(var i = 0 ; i < ctrl.numRow ; i++){
             ctrl.operations.push(emptyModel());
          }
       }
-      
+
       function removeRow(op){
          ctrl.operations.remove(op);
       }
-      
+
       function loadPreset(preset){
          if (!preset){
             return;
          }
-         
+
          dataService.getPreset(preset)
             .then(function(def){
                ctrl.operations.length = 0;
@@ -529,7 +612,7 @@
                }
             });
       }
-      
+
       function process(){
          if (validate()){
             var operations = [];
@@ -547,7 +630,7 @@
                });
          }
       }
-      
+
       function validate(){
          ctrl.errorMessages.length = 0;
          var count = 0;
@@ -576,15 +659,15 @@
          }
          return ctrl.errorMessages.length === 0;
       }
-      
+
       function modelEmpty(op){
          return (!op.category) && (!op.amount)
       }
-      
+
       function modelValid(op){
          return (!!op.category) && (!!op.amount);
       }
-      
+
       function modelToEntity(op){
          if (modelEmpty(op)){
             return null;
@@ -597,7 +680,7 @@
             category: op.category
          };
       }
-      
+
       function getTotal(){
          var total = 0;
          for (var i = 0 ; i < ctrl.operations.length ; i ++){
@@ -613,11 +696,11 @@
  */
 function arrayToObject(array, key, val){
    var o = {};
-   
+
    var selector = val ?
       function(t) { return t[val]; } :
       function(t) { return t; };
-   
+
    for(var i = 0 ; i < array.length ; i++){
       var item = array[i];
       var k = item[key];
@@ -641,7 +724,7 @@ Date.prototype.toFormat = function(){
    var year = this.getFullYear();
    var month = this.getMonth() + 1;
    var date = this.getDate();
-   
+
    return year + '-' + month.toString().padLeft('0', 2) + '-' + date.toString().padLeft('0', 2);
 };
 
@@ -660,7 +743,7 @@ String.prototype.padLeft = function(char, length){
    if (diff > 0){
       return Array(diff+1).join(char) + this;
    }
-   
+
    return this;
 };
 

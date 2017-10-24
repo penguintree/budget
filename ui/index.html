@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html data-ng-app="app" charset="utf8" lang="fr-CA">
    <head>
-   
+
       <style>
          td {
             border: 1px solid #ccc;
@@ -30,18 +30,18 @@
          .negative{
             color: red;
          }
-         
+
          table.operations {
             border-collapse: collapse
          }
          table.operations td, table.operations th{
             padding: 2px;
             border: none;
-         }         
+         }
          table.operations thead th {
             text-align: right;
          }
-         
+
          table.operations tr{
             border: 1px solid #ccc
          }
@@ -70,21 +70,22 @@
          }
          table.operations tr .actual+td:after {
             content: '\261C';
-            font-weight: bold;            
+            font-weight: bold;
          }
       </style>
    </head>
    <body>
-      
+
       <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.1/angular.min.js"></script>
       <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.1/angular-sanitize.min.js"></script>
       <script src="app.js"></script>
-      
+
+      <config-menu></config-menu>
       <app-menu></app-menu>
-      
+
       <budget-summary data-ng-if="$root.activePage === 'summary'"></budget-summary>
       <operations-list data-ng-if="$root.activePage === 'operationsList'"></operations-list>
       <add-operations data-ng-if="$root.activePage === 'addOperations'"></add-operations>
-      
+
    </body>
 </html>

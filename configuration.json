@@ -5,15 +5,13 @@
          "name": "main",
          "description": "configuration principale",
          "dataFolder": "data",
-         "database": "test",
-         "port": 8080
+         "database": "test"
       },
       {
          "name": "secondary",
          "description": "configuration secondaire",
          "dataFolder": "data2",
-         "database": "potato",
-         "port": 9090
+         "database": "potato"
       }
    ]
 }
