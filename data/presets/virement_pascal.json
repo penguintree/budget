@@ -1,0 +1,28 @@
+{
+   "title": "Virement Pascal",
+   "operations" : [
+      { "category": 1 , "amount": 1.04 },
+      { "category": 2 , "amount": 1.43 },
+      { "category": 3 , "amount": 3.56 },
+      { "category": 6 , "amount": 140.00 },
+      { "category": 7 , "amount": 88.57 },
+      { "category": 8 , "amount": 46.16 },
+      { "category": 9 , "amount": 17.31 },
+      { "category": 10, "amount": 38.75 },
+      { "category": 12, "amount": 14.91 },
+      { "category": 13, "amount": 19.24 },
+      { "category": 14, "amount": 48.85 },
+      { "category": 15, "amount": 319.70 },
+      { "category": 16, "amount": 9.28 },
+      { "category": 17, "amount": 11.54 },
+      { "category": 18, "amount": 44.24 },
+      { "category": 19, "amount": 9.04 },
+      { "category": 31, "amount": 5.77 },
+      { "category": 24, "amount": 57.70 },
+      { "category": 26, "amount": 14.58 },
+      { "category": 27, "amount": 2.89 },
+      { "category": 28, "amount": 20.77 },
+      { "category": 29, "amount": 6.23 },
+      { "category": 30, "amount": 9.62 }
+   ]
+}

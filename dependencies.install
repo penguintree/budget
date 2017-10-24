@@ -1,0 +1,4 @@
+#!/bin/sh
+for package in `cat dependencies.list`; do
+    npm install $package
+done

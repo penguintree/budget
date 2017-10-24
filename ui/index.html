@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html data-ng-app="app" charset="utf8" lang="fr-CA">
+   <head>
+   
+      <style>
+         td {
+            border: 1px solid #ccc;
+         }
+         .currency{
+            text-align: right;
+         }
+         th{
+            text-align: left;
+         }
+         tr.deleted td{
+            visibility: hidden;
+         }
+         .future{
+            color: #ccc;
+         }
+         .error, tr.error td{
+            background-color: red;
+         }
+         .information{
+            border: 1px solid green;
+         }
+         .appMenu li{
+            display: inline-block;
+         }
+         .negative{
+            color: red;
+         }
+         
+         table.operations {
+            border-collapse: collapse
+         }
+         table.operations td, table.operations th{
+            padding: 2px;
+            border: none;
+         }         
+         table.operations thead th {
+            text-align: right;
+         }
+         
+         table.operations tr{
+            border: 1px solid #ccc
+         }
+         table.operations tr.groupRow{
+            cursor: pointer;
+         }
+         table.operations tr th.group{
+            width: 514px;
+         }
+         table.operations tr th.group span{
+            font-style: italic;
+         }
+         table.operations tr .category{
+            width: 225px;
+            padding-left: 25px;
+         }
+         table.operations tr .description{
+            width: 260px;
+            font-style: italic;
+         }
+         table.operations tr .amount, .balance{
+            width: 75px;
+         }
+         table.operations tr .del {
+            width: 25px;
+         }
+         table.operations tr .actual+td:after {
+            content: '\261C';
+            font-weight: bold;            
+         }
+      </style>
+   </head>
+   <body>
+      
+      <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.1/angular.min.js"></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.1/angular-sanitize.min.js"></script>
+      <script src="app.js"></script>
+      
+      <app-menu></app-menu>
+      
+      <budget-summary data-ng-if="$root.activePage === 'summary'"></budget-summary>
+      <operations-list data-ng-if="$root.activePage === 'operationsList'"></operations-list>
+      <add-operations data-ng-if="$root.activePage === 'addOperations'"></add-operations>
+      
+   </body>
+</html>
