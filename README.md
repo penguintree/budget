@@ -11,6 +11,5 @@ to run app with demo config :
 `nodejs main.js --configuration configuration.json`
 
 *TODOS*
-- support multiple database in frontend
-- update angular version to fix bug in number inputs
-- rewrite frontend in pjs(!)
+- rewrite ui in modern librairy, maybe vuetify
+- Some code cleanup
